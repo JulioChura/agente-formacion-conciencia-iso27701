@@ -13,10 +13,12 @@
 ![Estado](https://img.shields.io/badge/estado-avance%20funcional-yellow)
 ![Licencia](https://img.shields.io/badge/licencia-acad%C3%A9mica-lightgrey)
 
-**Proyecto:** Sistema Multiagente para PIMS basado en ISO/IEC 27701:2025  
-**Grupo:** 1  
-**Agente asignado:** Agente de Formación y Conciencia  
-**Controles cubiertos:** A.3.17 (Concienciación, educación y formación) y A.3.18 (Acuerdos de confidencialidad)
+| | |
+|---|---|
+| **Proyecto** | Sistema Multiagente para PIMS basado en ISO/IEC 27701:2025 |
+| **Grupo** | 1 |
+| **Agente asignado** | Agente de Formación y Conciencia |
+| **Controles cubiertos** | A.3.17 (Concienciación, educación y formación) y A.3.18 (Acuerdos de confidencialidad) |
 
 ---
 
@@ -68,17 +70,15 @@ Para ser transparente sobre el alcance real de esta entrega, aquí está el deta
 ## 3. Arquitectura
 
 La arquitectura está diseñada para ser modular y permitir que cada pieza se reemplace sin afectar las demás. En este avance, las capas de presentación, API, núcleo del agente y RAG están implementadas. Los MCPs externos están simulados.
+
 ![Arquitectura del sistema](docs/arquitectura.png)
 
 ### 3.1 Capas
 
-**Presentación (Vue 3):** interfaz de chat con sidebar, header y área de mensajes. Consumo del backend mediante `fetch` + `ReadableStream` (SSE). Renderizado de Markdown con `marked` y sanitización con `DOMPurify`. Estilos con Material Design 3 (paleta morada `#6750a4`). Animaciones de typing, transición de mensajes y scroll automático.
-
-**API (FastAPI):** endpoint `POST /chat` que devuelve `StreamingResponse` con `text/event-stream`. Cada token se envía como evento SSE. Al final, evento `done` con las fuentes recuperadas por el RAG. Endpoint `GET /historial/{thread_id}`. Middleware CORS habilitado.
-
-**Núcleo (LangChain):** LLM configurable vía `.env`, RAG con Chroma persistente, Skill de alta de formación, memoria SQLite, y clientes MCP (simulados en este avance).
-
-**Servidores MCP:** externos consumidos (RRHH, Correo, Firma, PostgreSQL, Evidencias) e interno expuesto (FastMCP con 4 herramientas).
+- **Presentación (Vue 3):** interfaz de chat con sidebar, header y área de mensajes. Consumo del backend mediante `fetch` + `ReadableStream` (SSE). Renderizado de Markdown con `marked` y sanitización con `DOMPurify`. Estilos con Material Design 3 (paleta morada `#6750a4`). Animaciones de typing, transición de mensajes y scroll automático.
+- **API (FastAPI):** endpoint `POST /chat` que devuelve `StreamingResponse` con `text/event-stream`. Cada token se envía como evento SSE. Al final, evento `done` con las fuentes recuperadas por el RAG. Endpoint `GET /historial/{thread_id}`. Middleware CORS habilitado.
+- **Núcleo (LangChain):** LLM configurable vía `.env`, RAG con Chroma persistente, Skill de alta de formación, memoria SQLite, y clientes MCP (simulados en este avance).
+- **Servidores MCP:** externos consumidos (RRHH, Correo, Firma, PostgreSQL, Evidencias) e interno expuesto (FastMCP con 4 herramientas).
 
 ### 3.2 Flujo de una petición
 
@@ -130,9 +130,8 @@ El proyecto incluye un **script de inicialización** que automatiza todo el setu
 
 ### 5.2 Instalación automática
 
-**Windows:** ejecutar `setup.bat` desde la raíz del proyecto.
-
-**Linux / Mac:** ejecutar `setup.sh` desde la raíz del proyecto.
+- **Windows:** ejecutar `setup.bat` desde la raíz del proyecto.
+- **Linux / Mac:** ejecutar `setup.sh` desde la raíz del proyecto.
 
 El script hace lo siguiente:
 
@@ -144,7 +143,7 @@ El script hace lo siguiente:
 
 Al final muestra:
 
-```
+```text
 Aplicacion lista.
 Frontend: http://localhost:5500
 Backend:  http://localhost:8000
@@ -155,28 +154,53 @@ MCP:      python backend/mcp_server.py
 
 Si prefieres hacerlo manualmente:
 
-```bash
-# 1. Crear entorno virtual
-python -m venv .venv
-.venv\Scripts\activate       # Windows
-source .venv/bin/activate    # Linux/Mac
+**1. Crear el entorno virtual**
 
-# 2. Instalar dependencias
+```bash
+python -m venv .venv
+```
+
+**2. Activarlo**
+
+```bash
+# Windows
+.venv\Scripts\activate
+
+# Linux / Mac
+source .venv/bin/activate
+```
+
+**3. Instalar dependencias**
+
+```bash
 pip install -r requirements.txt
 pip install langchain-ollama langchain-chroma langchain-huggingface sentence-transformers
+```
 
-# 3. Descargar modelos de Ollama
+**4. Descargar modelos de Ollama**
+
+```bash
 ollama pull qwen2.5:7b
 ollama pull nomic-embed-text
+```
 
-# 4. Configurar .env (copiar de .env.example)
-# 5. Indexar documentos
+**5. Configurar `.env`** (copiar de `.env.example`).
+
+**6. Indexar documentos**
+
+```bash
 python -m backend.indexar
+```
 
-# 6. Levantar backend
+**7. Levantar el backend**
+
+```bash
 uvicorn backend.main:app --host 0.0.0.0 --port 8000
+```
 
-# 7. Levantar frontend (otra terminal)
+**8. Levantar el frontend** (en otra terminal)
+
+```bash
 python -m http.server 5500 --directory frontend
 ```
 
@@ -196,7 +220,7 @@ OPENROUTER_API_KEY=
 
 ## 6. Estructura del proyecto
 
-```
+```text
 agente-formacion/
 ├── backend/
 │   ├── __init__.py
@@ -233,11 +257,10 @@ agente-formacion/
 
 ### 7.2 RAG multilingüe
 
-Dos fases:
+El RAG funciona en dos fases:
 
-**Indexación (offline):** los documentos de `documentos/` se dividen en chunks de 500 caracteres con 50 de solapamiento, se convierten a embeddings con `multilingual-e5-base`, y se guardan en Chroma persistente.
-
-**Consulta (runtime):** la pregunta del usuario se convierte en embedding, se buscan los `k=3` fragmentos más similares, y se inyectan en el prompt del LLM como contexto.
+- **Indexación (offline):** los documentos de `documentos/` se dividen en chunks de 500 caracteres con 50 de solapamiento, se convierten a embeddings con `multilingual-e5-base`, y se guardan en Chroma persistente.
+- **Consulta (runtime):** la pregunta del usuario se convierte en embedding, se buscan los `k=3` fragmentos más similares, y se inyectan en el prompt del LLM como contexto.
 
 El uso de embeddings multilingües permite que preguntas en español recuperen fragmentos en inglés (como la ISO 27701), resolviendo el problema de idioma cruzado.
 
@@ -280,7 +303,7 @@ Vue consume el backend con `fetch` + `ReadableStream`, parseando eventos SSE lí
 | 7.3 | Awareness | Asegura que el personal conoce la política de privacidad |
 | 7.4 | Communication | Gestiona comunicaciones internas/externas sobre privacidad |
 
-**Nota:** la certificación de cumplimiento requiere auditoría formal. Este agente es una herramienta de soporte, no un certificado.
+> **Nota:** la certificación de cumplimiento requiere auditoría formal. Este agente es una herramienta de soporte, no un certificado.
 
 ---
 
@@ -307,13 +330,13 @@ Preguntas que se hicieron al agente y que demuestran su funcionamiento:
 
 ## 10. Trabajo futuro
 
-- Reemplazar MCPs simulados por reales: conectar con Moodle, DocuSign, SMTP, PostgreSQL.
-- Integrar con el Orquestador: conectar el servidor MCP propio al PIMS.
-- Comunicación con otros agentes: implementar A2A o mensajes MCP para coordinarse con Inventario, Riesgos, Evidencia.
-- HITL formal: implementar bloqueo y aprobación explícita.
-- Autenticación y seguridad: OAuth2, permisos por rol, auditoría.
-- Dockerización: empaquetar todo para despliegue reproducible.
-- Pruebas automatizadas: tests unitarios y de integración.
+- **Reemplazar MCPs simulados por reales:** conectar con Moodle, DocuSign, SMTP, PostgreSQL.
+- **Integrar con el Orquestador:** conectar el servidor MCP propio al PIMS.
+- **Comunicación con otros agentes:** implementar A2A o mensajes MCP para coordinarse con Inventario, Riesgos, Evidencia.
+- **HITL formal:** implementar bloqueo y aprobación explícita.
+- **Autenticación y seguridad:** OAuth2, permisos por rol, auditoría.
+- **Dockerización:** empaquetar todo para despliegue reproducible.
+- **Pruebas automatizadas:** tests unitarios y de integración.
 
 ---
 
@@ -325,5 +348,4 @@ No es un chatbot. Es un agente especializado con RAG, Skill, MCP y UI, diseñado
 
 ---
 
-**Fin del documento de avance.**#   a g e n t e - f o r m a c i o n - c o n c i e n c i a - i s o 2 7 7 0 1  
- 
+**Fin del documento de avance.**
