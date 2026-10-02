@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Agente de formación y Conciencia</title>
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- Marked -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- DOMPurify -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+
+    <!-- Material Icons -->
+    <link
+        href="https://fonts.googleapis.com/icon?family=Material+Icons"
+        rel="stylesheet"
+    >
+
+    <!-- Google Font -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <style>
+
+        /* =====================================================
+           VARIABLES
+        ===================================================== */
+
+        :root {
+            --primary: #6750a4;
+            --primary-dark: #4f378b;
+            --primary-light: #eaddff;
+
+            --background: #f7f5fa;
+            --surface: #ffffff;
+            --surface-variant: #f1edf4;
+
+            --text: #1d1b20;
+            --text-secondary: #49454f;
+
+            --border: #e5e1e8;
+
+            --user-message: #6750a4;
+            --assistant-message: #f1edf4;
+
+            --shadow:
+                0 1px 2px rgba(0, 0, 0, 0.04),
+                0 4px 16px rgba(0, 0, 0, 0.05);
+        }
+
+
+        /* =====================================================
+           RESET
+        ===================================================== */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            font-family: "Inter", sans-serif;
+            background: var(--background);
+            color: var(--text);
+        }
+
+        button,
+        input,
+        textarea {
+            font-family: inherit;
+        }
+
+
+        /* =====================================================
+           APP
+        ===================================================== */
+
+        #app {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+        }
+
+
+        /* =====================================================
+           LAYOUT
+        ===================================================== */
+
+        .app-layout {
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+
+
+        /* =====================================================
+           SIDEBAR
+        ===================================================== */
+
+        .sidebar {
+            width: 250px;
+            height: 100%;
+            background: #f1eef5;
+            border-right: 1px solid var(--border);
+
+            display: flex;
+            flex-direction: column;
+
+            padding: 20px 14px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            padding: 10px 12px;
+            margin-bottom: 25px;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+
+            border-radius: 12px;
+
+            background: var(--primary);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            color: white;
+        }
+
+        .brand-icon .material-icons {
+            font-size: 23px;
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-title {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .brand-subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+
+        /* =====================================================
+           NEW CHAT
+        ===================================================== */
+
+        .new-chat {
+            width: 100%;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+
+            padding: 12px 16px;
+
+            border: none;
+            border-radius: 24px;
+
+            background: var(--primary-light);
+            color: var(--primary-dark);
+
+            font-weight: 600;
+            font-size: 14px;
+
+            cursor: pointer;
+
+            transition: 0.2s ease;
+        }
+
+        .new-chat:hover {
+            background: #dfd0fa;
+        }
+
+
+        /* =====================================================
+           SIDEBAR MENU
+        ===================================================== */
+
+        .sidebar-section {
+            margin-top: 30px;
+        }
+
+        .sidebar-label {
+            padding: 0 12px;
+
+            font-size: 11px;
+            font-weight: 600;
+
+            text-transform: uppercase;
+
+            color: #77717e;
+
+            letter-spacing: 0.6px;
+
+            margin-bottom: 8px;
+        }
+
+        .sidebar-item {
+            width: 100%;
+
+            display: flex;
+            align-items: center;
+
+            gap: 12px;
+
+            padding: 11px 12px;
+
+            border-radius: 10px;
+
+            color: var(--text-secondary);
+
+            font-size: 13px;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(103, 80, 164, 0.08);
+            color: var(--primary);
+        }
+
+
+        /* =====================================================
+           MAIN
+        ===================================================== */
+
+        .main {
+            flex: 1;
+            height: 100%;
+
+            display: flex;
+            flex-direction: column;
+
+            min-width: 0;
+        }
+
+
+        /* =====================================================
+           HEADER
+        ===================================================== */
+
+        .header {
+            height: 68px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 28px;
+
+            background: rgba(255, 255, 255, 0.85);
+
+            backdrop-filter: blur(12px);
+
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .assistant-avatar {
+            width: 38px;
+            height: 38px;
+
+            border-radius: 50%;
+
+            background: var(--primary-light);
+
+            color: var(--primary);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-title {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-title strong {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+
+            font-size: 11px;
+
+            color: #6d6872;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+
+            border-radius: 50%;
+
+            background: #22c55e;
+        }
+
+
+        /* =====================================================
+           CHAT AREA
+        ===================================================== */
+
+        .chat-wrapper {
+            flex: 1;
+
+            display: flex;
+            justify-content: center;
+
+            min-height: 0;
+        }
+
+        .chat-messages {
+            width: 100%;
+            max-width: 900px;
+
+            overflow-y: auto;
+
+            padding: 35px 28px 120px;
+        }
+
+
+        /* Scrollbar */
+
+        .chat-messages::-webkit-scrollbar {
+            width: 7px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #d4cfd9;
+            border-radius: 10px;
+        }
+
+
+        /* =====================================================
+           WELCOME
+        ===================================================== */
+
+        .welcome {
+            text-align: center;
+
+            padding: 50px 20px 35px;
+        }
+
+        .welcome-icon {
+            width: 64px;
+            height: 64px;
+
+            margin: 0 auto 18px;
+
+            border-radius: 20px;
+
+            background: var(--primary);
+
+            color: white;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            box-shadow: 0 8px 25px rgba(103, 80, 164, 0.25);
+        }
+
+        .welcome-icon .material-icons {
+            font-size: 32px;
+        }
+
+        .welcome h1 {
+            margin: 0 0 8px;
+
+            font-size: 27px;
+            font-weight: 700;
+        }
+
+        .welcome p {
+            margin: 0;
+
+            color: var(--text-secondary);
+
+            font-size: 14px;
+        }
+
+
+        /* =====================================================
+           MESSAGE
+        ===================================================== */
+
+        .mensaje {
+            display: flex;
+
+            margin-bottom: 25px;
+
+            animation: messageAppear 0.2s ease;
+        }
+
+        @keyframes messageAppear {
+
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+        }
+
+        .mensaje.user {
+            justify-content: flex-end;
+        }
+
+        .mensaje.assistant {
+            justify-content: flex-start;
+        }
+
+
+        /* =====================================================
+           MESSAGE CONTENT
+        ===================================================== */
+
+        .message-content {
+            display: flex;
+
+            align-items: flex-start;
+
+            gap: 10px;
+
+            max-width: 82%;
+        }
+
+        .message-avatar {
+            flex-shrink: 0;
+
+            width: 32px;
+            height: 32px;
+
+            border-radius: 50%;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .assistant-avatar-small {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .user-avatar {
+            background: #e6e1e9;
+            color: #5f5865;
+        }
+
+
+        /* =====================================================
+           BUBBLE
+        ===================================================== */
+
+        .burbuja {
+            padding: 13px 17px;
+
+            border-radius: 18px;
+
+            line-height: 1.6;
+
+            font-size: 14px;
+
+            word-wrap: break-word;
+
+            box-shadow: var(--shadow);
+        }
+
+        .user .burbuja {
+            background: var(--user-message);
+
+            color: white;
+
+            border-bottom-right-radius: 5px;
+        }
+
+        .assistant .burbuja {
+            background: var(--assistant-message);
+
+            color: var(--text);
+
+            border-bottom-left-radius: 5px;
+        }
+
+
+        /* =====================================================
+           MARKDOWN
+        ===================================================== */
+
+        .burbuja :deep(p) {
+            margin-top: 0;
+        }
+
+        .burbuja p {
+            margin: 0 0 10px;
+        }
+
+        .burbuja p:last-child {
+            margin-bottom: 0;
+        }
+
+        .burbuja ul,
+        .burbuja ol {
+            padding-left: 22px;
+        }
+
+        .burbuja code {
+            padding: 2px 5px;
+
+            border-radius: 5px;
+
+            background: rgba(0, 0, 0, 0.08);
+
+            font-family: monospace;
+        }
+
+        .burbuja pre {
+            overflow-x: auto;
+
+            padding: 12px;
+
+            border-radius: 10px;
+
+            background: #1e1e1e;
+
+            color: #eee;
+        }
+
+
+        /* =====================================================
+           TYPING
+        ===================================================== */
+
+        .typing {
+            display: inline-block;
+
+            margin-left: 3px;
+
+            color: var(--primary);
+
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            50% {
+                opacity: 1;
+            }
+
+            51%,
+            100% {
+                opacity: 0;
+            }
+
+        }
+
+
+        /* =====================================================
+           INPUT AREA
+        ===================================================== */
+
+        .input-area {
+            position: absolute;
+
+            bottom: 0;
+
+            left: 250px;
+            right: 0;
+
+            display: flex;
+            justify-content: center;
+
+            padding: 18px 28px 25px;
+
+            background:
+                linear-gradient(
+                    to top,
+                    var(--background) 65%,
+                    transparent
+                );
+        }
+
+        .input-wrapper {
+            width: 100%;
+            max-width: 900px;
+
+            display: flex;
+            align-items: flex-end;
+
+            gap: 10px;
+
+            padding: 8px 8px 8px 18px;
+
+            background: white;
+
+            border: 1px solid #d8d3dc;
+
+            border-radius: 18px;
+
+            box-shadow:
+                0 5px 25px rgba(0, 0, 0, 0.08);
+
+            transition: 0.2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--primary);
+
+            box-shadow:
+                0 5px 25px rgba(103, 80, 164, 0.15);
+        }
+
+
+        /* =====================================================
+           INPUT
+        ===================================================== */
+
+        .input-wrapper input {
+            flex: 1;
+
+            min-width: 0;
+
+            border: none;
+            outline: none;
+
+            background: transparent;
+
+            padding: 10px 0;
+
+            font-size: 14px;
+
+            color: var(--text);
+        }
+
+        .input-wrapper input::placeholder {
+            color: #8b858e;
+        }
+
+
+        /* =====================================================
+           SEND BUTTON
+        ===================================================== */
+
+        .send-button {
+            width: 42px;
+            height: 42px;
+
+            flex-shrink: 0;
+
+            border: none;
+
+            border-radius: 13px;
+
+            background: var(--primary);
+
+            color: white;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+        }
+
+        .send-button:hover:not(:disabled) {
+            background: var(--primary-dark);
+
+            transform: translateY(-1px);
+        }
+
+        .send-button:disabled {
+            background: #d6d1d9;
+
+            cursor: not-allowed;
+        }
+
+
+        /* =====================================================
+           FOOTER TEXT
+        ===================================================== */
+
+        .input-hint {
+            text-align: center;
+
+            margin-top: 8px;
+
+            font-size: 10px;
+
+            color: #817b84;
+        }
+
+
+        /* =====================================================
+           MOBILE
+        ===================================================== */
+
+        @media (max-width: 768px) {
+
+            .sidebar {
+                display: none;
+            }
+
+            .header {
+                padding: 0 16px;
+            }
+
+            .chat-messages {
+                padding: 20px 15px 120px;
+            }
+
+            .message-content {
+                max-width: 92%;
+            }
+
+            .input-area {
+                left: 0;
+
+                padding: 12px 12px 18px;
+            }
+
+            .welcome {
+                padding-top: 35px;
+            }
+
+            .welcome h1 {
+                font-size: 23px;
+            }
+
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+<div id="app">
+
+    <div class="app-layout">
+
+
+        <!-- =================================================
+             SIDEBAR
+        ================================================== -->
+
+        <aside class="sidebar">
+
+            <div class="brand">
+
+                <div class="brand-icon">
+                    <span class="material-icons">
+                        auto_awesome
+                    </span>
+                </div>
+
+                <div class="brand-text">
+
+                    <span class="brand-title">
+                        Agente de Formación y Conciencia
+                    </span>
+
+                    <span class="brand-subtitle">
+                        Agente de Inteligente
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <button class="new-chat">
+
+                <span class="material-icons">
+                    add
+                </span>
+
+                Nuevo chat
+
+            </button>
+
+
+            <div class="sidebar-section">
+
+                <div class="sidebar-label">
+                    Conversaciones
+                </div>
+
+                <div class="sidebar-item">
+
+                    <span class="material-icons">
+                        chat_bubble_outline
+                    </span>
+
+                    Chat actual
+
+                </div>
+
+            </div>
+
+
+            <div class="sidebar-section">
+
+                <div class="sidebar-label">
+                    Herramientas
+                </div>
+
+                <div class="sidebar-item">
+
+                    <span class="material-icons">
+                        description
+                    </span>
+
+                    Documentos
+
+                </div>
+
+                <div class="sidebar-item">
+
+                    <span class="material-icons">
+                        settings
+                    </span>
+
+                    Configuración
+
+                </div>
+
+            </div>
+
+        </aside>
+
+
+        <!-- =================================================
+             MAIN
+        ================================================== -->
+
+        <main class="main">
+
+
+            <!-- HEADER -->
+
+            <header class="header">
+
+                <div class="header-left">
+
+                    <div class="assistant-avatar">
+
+                        <span class="material-icons">
+                            auto_awesome
+                        </span>
+
+                    </div>
+
+                    <div class="header-title">
+
+                        <strong>
+                            Agente de Formación y Conciencia
+                        </strong>
+
+                        <span class="status">
+
+                            <span class="status-dot"></span>
+
+                            En línea
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <span class="material-icons"
+                      style="color:#77717e; cursor:pointer;">
+
+                    more_vert
+
+                </span>
+
+            </header>
+
+
+            <!-- CHAT -->
+
+            <div class="chat-wrapper">
+
+                <main
+                    ref="scrollArea"
+                    class="chat-messages"
+                >
+
+
+                    <!-- WELCOME -->
+
+                    <div
+                        v-if="mensajes.length === 0"
+                        class="welcome"
+                    >
+
+                        <div class="welcome-icon">
+
+                            <span class="material-icons">
+                                auto_awesome
+                            </span>
+
+                        </div>
+
+                        <h1>
+                            ¿En qué puedo ayudarte?
+                        </h1>
+
+                        <p>
+                            Escribe una pregunta para comenzar una conversación.
+                        </p>
+
+                    </div>
+
+
+                    <!-- MENSAJES -->
+
+                    <div
+                        v-for="(mensaje, index) in mensajes"
+                        :key="index"
+
+                        class="mensaje"
+
+                        :class="mensaje.rol"
+                    >
+
+                        <div class="message-content">
+
+
+                            <!-- AVATAR -->
+
+                            <div
+                                v-if="mensaje.rol === 'assistant'"
+                                class="message-avatar assistant-avatar-small"
+                            >
+
+                                <span class="material-icons">
+                                    auto_awesome
+                                </span>
+
+                            </div>
+
+
+                            <!-- BURBUJA -->
+
+                            <div class="burbuja">
+
+
+                                <!-- USER -->
+
+                                <template
+                                    v-if="mensaje.rol === 'user'"
+                                >
+
+                                    {{ mensaje.contenido }}
+
+                                </template>
+
+
+                                <!-- ASSISTANT -->
+
+                                <template v-else>
+
+                                    <div
+                                        v-html="
+                                            renderMarkdown(
+                                                mensaje.contenido
+                                            )
+                                        "
+                                    ></div>
+
+
+                                    <span
+                                        v-if="mensaje.streaming"
+                                        class="typing"
+                                    >
+                                        ▌
+                                    </span>
+
+                                </template>
+
+                            </div>
+
+
+                            <!-- USER AVATAR -->
+
+                            <div
+                                v-if="mensaje.rol === 'user'"
+                                class="message-avatar user-avatar"
+                            >
+
+                                <span class="material-icons">
+                                    person
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                </main>
+
+            </div>
+
+
+            <!-- =================================================
+                 INPUT
+            ================================================== -->
+
+            <div class="input-area">
+
+                <div style="width:100%; max-width:900px;">
+
+
+                    <form
+                        class="input-wrapper"
+
+                        @submit.prevent="enviar"
+                    >
+
+                        <input
+                            v-model="input"
+
+                            type="text"
+
+                            placeholder="Escribe un mensaje..."
+
+                            :disabled="cargando"
+
+                            autocomplete="off"
+                        >
+
+
+                        <button
+                            class="send-button"
+
+                            type="submit"
+
+                            :disabled="
+                                cargando ||
+                                !input.trim()
+                            "
+                        >
+
+                            <span
+                                v-if="!cargando"
+                                class="material-icons"
+                            >
+                                arrow_upward
+                            </span>
+
+                            <span
+                                v-else
+                                class="material-icons"
+                            >
+                                hourglass_empty
+                            </span>
+
+                        </button>
+
+                    </form>
+
+
+                    <div class="input-hint">
+
+                        La IA puede cometer errores.
+                        Verifica la información importante.
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+        </main>
+
+    </div>
+
+</div>
+
+
+
+<script src="app.js"></script>
+
+</body>
+
+</html>
+
