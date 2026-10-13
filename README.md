@@ -179,7 +179,7 @@ sequenceDiagram
 
 ## 5. Guía de Instalación y Ejecución
 
-Sigue estos pasos detallados para levantar el entorno completo en tu máquina local (**Windows**, **Linux** o **macOS**).
+Sigue las instrucciones a continuación para levantar el entorno completo. Puedes elegir la **ejecución automática en 1 clic** (recomendada) o el **paso a paso manual**.
 
 ### 5.1 Requisitos Previos
 
@@ -191,15 +191,46 @@ Sigue estos pasos detallados para levantar el entorno completo en tu máquina lo
 
 ---
 
-### 5.2 Configuración del Backend
+### 5.2 Instalación y Ejecución Automática (1 Solo Clic / Comando)
 
-#### 1. Clonar el repositorio y acceder a la carpeta backend:
-```bash
-git clone <URL_DEL_REPOSITORIO>
-cd agente-unsa/backend
+El repositorio incluye scripts que configuran el entorno virtual, instalan todas las dependencias en un solo paso, inicializan las bases de datos y levantan el backend y frontend simultáneamente:
+
+#### **En Windows (Doble Clic o Terminal):**
+Haz doble clic sobre **`setup_y_ejecutar.bat`** o ejecútalo desde PowerShell / CMD en la raíz del proyecto:
+```cmd
+setup_y_ejecutar.bat
 ```
 
-#### 2. Crear y activar el entorno virtual:
+#### **En Linux / macOS:**
+Otorga permisos de ejecución y corre el script bash desde la raíz:
+```bash
+chmod +x setup_y_ejecutar.sh
+./setup_y_ejecutar.sh
+```
+
+**¿Qué hace el script automáticamente?**
+1. Crea el entorno virtual `backend/venv` si no existe.
+2. Actualiza `pip` e instala todas las dependencias en una sola ejecución con `pip install -r backend/requirements.txt`.
+3. Crea el archivo `backend/.env` desde `.env.example` si aún no existe.
+4. Inicializa SQLite (`python init_db.py`) creando las 12 tablas y cargando los usuarios semilla.
+5. Indexa la base de conocimiento normativa en ChromaDB (`python ingesta.py`).
+6. Instala las dependencias del frontend (`npm install` en `frontend/`).
+7. Levanta el Backend (`uvicorn main:app --reload --port 8000`) y el Frontend (`npm run dev`) abriendo el navegador en `http://localhost:5173`.
+
+---
+
+### 5.3 Instalación y Ejecución Manual (Paso a Paso)
+
+Si prefieres realizar el despliegue de forma manual en terminales separadas:
+
+#### **Paso 1: Configurar el Backend**
+
+1. Accede a la carpeta `backend/`:
+```bash
+cd backend
+```
+
+2. Crear y activar el entorno virtual:
 * **En Windows (PowerShell):**
   ```powershell
   python -m venv venv
@@ -211,12 +242,12 @@ cd agente-unsa/backend
   source venv/bin/activate
   ```
 
-#### 3. Instalar las dependencias de Python:
+3. Instalar **todas** las dependencias de Python (un solo comando unificado):
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
-pip install chromadb sentence-transformers
 ```
+*(El archivo `requirements.txt` ya incluye FastAPI, LangGraph, ChromaDB, Sentence-Transformers, FastMCP, PyPDF y demás librerías necesarias).*
 
 #### 4. Configurar las variables de entorno (`.env`):
 Copia la plantilla de entorno:
@@ -284,11 +315,11 @@ El backend quedará escuchando en:
 
 ---
 
-### 5.3 Configuración del Frontend
+#### **Paso 2: Configurar el Frontend (Vue 3)**
 
 En una **segunda terminal**, dirígete a la carpeta `frontend/`:
 
-#### 1. Acceder al directorio e instalar dependencias Node:
+1. Acceder al directorio e instalar dependencias Node:
 ```bash
 cd ../frontend
 npm install
