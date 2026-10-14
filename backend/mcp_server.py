@@ -142,20 +142,6 @@ def gestionar_acuerdo_confidencialidad(user_id: str, tipo: str = "NDA General UN
                 (nda_id, user_id, tipo, fecha_hoy, fecha_vencimiento, doc_url)
             )
 
-            # Orquestación MCP Firma
-            firma_res = firma_solicitar(user_id=user_id, documento=doc_url)
-
-            registrar_audit(user_id, "gestionar_acuerdo_confidencialidad_crear", {"nda_id": nda_id, "tipo": tipo})
-
-            return {
-                "status": "success",
-                "nda_id": nda_id,
-                "tipo": tipo,
-                "estado": "pendiente",
-                "fecha_vencimiento": fecha_vencimiento,
-                "firma_integracion": firma_res
-            }
-
         elif accion == "firmar":
             # Buscar NDA pendiente
             nda = conn.execute(
@@ -182,21 +168,32 @@ def gestionar_acuerdo_confidencialidad(user_id: str, tipo: str = "NDA General UN
                     (fecha_hoy, nda_id)
                 )
 
-            firma_res = firma_solicitar(user_id=user_id, documento=f"Acuerdo_{tipo}_FIRMADO")
-
-            registrar_audit(user_id, "gestionar_acuerdo_confidencialidad_firmar", {"nda_id": nda_id})
-
-            return {
-                "status": "success",
-                "nda_id": nda_id,
-                "mensaje": f"Acuerdo '{tipo}' firmado exitosamente para {user["nombre"]}",
-                "estado": "firmado",
-                "fecha_firma": fecha_hoy,
-                "firma_integracion": firma_res
-            }
-
         else:
             return {"status": "error", "message": f"Acción desconocida: {accion}"}
+
+    # Orquestación fuera del bloque de transacción de BD
+    if accion == "crear":
+        firma_res = firma_solicitar(user_id=user_id, documento=doc_url)
+        registrar_audit(user_id, "gestionar_acuerdo_confidencialidad_crear", {"nda_id": nda_id, "tipo": tipo})
+        return {
+            "status": "success",
+            "nda_id": nda_id,
+            "tipo": tipo,
+            "estado": "pendiente",
+            "fecha_vencimiento": fecha_vencimiento,
+            "firma_integracion": firma_res
+        }
+    elif accion == "firmar":
+        firma_res = firma_solicitar(user_id=user_id, documento=f"Acuerdo_{tipo}_FIRMADO")
+        registrar_audit(user_id, "gestionar_acuerdo_confidencialidad_firmar", {"nda_id": nda_id})
+        return {
+            "status": "success",
+            "nda_id": nda_id,
+            "mensaje": f"Acuerdo '{tipo}' firmado exitosamente para {user['nombre']}",
+            "estado": "firmado",
+            "fecha_firma": fecha_hoy,
+            "firma_integracion": firma_res
+        }
 
 # ==============================================================================
 # HERRAMIENTA 3: consultar_estado_formacion

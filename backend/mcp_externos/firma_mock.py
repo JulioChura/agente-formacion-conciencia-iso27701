@@ -15,7 +15,7 @@ def solicitar_firma(user_id: str, documento: str) -> dict:
     now = datetime.now().isoformat()
 
     print("\n" + "-"*40)
-    print(f"✍️ [MCP Firma Mock - DocuSign UNSA] Solicitud de firma electrónica:")
+    print(f"[MCP Firma Mock - DocuSign UNSA] Solicitud de firma electrónica:")
     print(f"Usuario ID: {user_id} | Documento: {documento} | Solicitud ID: {solicitud_id}")
     print("-"*40 + "\n")
 

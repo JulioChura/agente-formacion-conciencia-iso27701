@@ -18,3 +18,4 @@ class PIMSState(TypedDict):
     pending_action: Optional[Dict[str, Any]]   # Acción preparada esperando confirmación
     requires_approval: bool
     approved: Optional[bool]
+    skill_content: Optional[str]               # Especificación activa leída dinámicamente de SKILL.md

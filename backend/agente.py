@@ -13,6 +13,7 @@ from mcp_client import MCPClient
 from db import get_db_connection
 from actions import registrar_accion_pendiente, ejecutar_accion_preparada, is_approval_text, check_approval_semantic
 from llm_service import LLMService
+from skill_loader import cargar_skill_definicion
 
 logger = logging.getLogger("agente")
 
@@ -28,13 +29,15 @@ logger.info("Checkpointer MemorySaver configurado para LangGraph.")
 # 1. Nodo: entry
 async def node_entry(state: PIMSState) -> Dict[str, Any]:
     """
-    Recibe el input y asegura estado inicializado.
+    Recibe el input, asegura estado inicializado y carga activamente el archivo SKILL.md.
     """
-    logger.info(f"Entrando al grafo PIMS para usuario: {state.get('user_id')}")
+    skill_text = cargar_skill_definicion()
+    logger.info(f"[LangGraph Flow: node_entry] SKILL.md cargado en el estado ({len(skill_text)} bytes) para usuario: {state.get('user_id')}")
     return {
         "rag_context": state.get("rag_context", []),
         "requires_approval": False,
-        "tool_result": None
+        "tool_result": None,
+        "skill_content": skill_text
     }
 
 # 2. Nodo: classify_intent

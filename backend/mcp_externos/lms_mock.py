@@ -15,7 +15,7 @@ def matricular(user_id: str, curso_id: str) -> dict:
     now = datetime.now().isoformat()
 
     print("\n" + "-"*40)
-    print(f"🎓 [MCP LMS Mock] Matriculando en LMS Moodle UNSA:")
+    print(f"[MCP LMS Mock] Matriculando en LMS Moodle UNSA:")
     print(f"Usuario ID: {user_id} | Curso ID: {curso_id} | Matrícula ID: {matricula_id}")
     print("-"*40 + "\n")
 
