@@ -199,7 +199,7 @@ def inicializar_base_de_datos():
 
         conn.commit()
 
-    print("✅ Base de datos SQLite inicializada exitosamente:")
+    print("[OK] Base de datos SQLite inicializada exitosamente:")
     print("   - 15 usuarios precargados (10 antiguos + 5 nuevos).")
     print("   - 5 formaciones ISO 27701 y Ley 29733.")
     print("   - Asignaciones de formación y NDAs sintéticos.")

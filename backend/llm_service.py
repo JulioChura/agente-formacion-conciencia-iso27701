@@ -189,6 +189,46 @@ class LLMService:
                 return json.dumps({"intent": "fuera_de_alcance", "entidades": {}})
             return json.dumps({"intent": "consulta_normativa", "entidades": {}})
 
+        # 0. PRIORIDAD ABSOLUTA: Si hay resultados de herramientas del sistema, formatearlos limpiamente
+        if "Resultados de Herramientas del Sistema:" in context_text:
+            try:
+                tools_raw = context_text.split("Resultados de Herramientas del Sistema:")[-1].strip()
+                if "usuarios" in tools_raw:
+                    tool_json = json.loads(tools_raw)
+                    users = tool_json.get("usuarios", [])
+                    total = tool_json.get("total", len(users))
+                    if users:
+                        filas = "\n".join([f"| `{u.get('id')}` | **{u.get('nombre')}** | `{u.get('email')}` | {u.get('rol', '').capitalize()} | {u.get('facultad') or 'UNSA'} |" for u in users])
+                        return (
+                            f"### 📋 Listado de Usuarios Registrados ({total})\n\n"
+                            f"En cumplimiento de los controles de gobernanza **ISO/IEC 27701:2025** y el principio de seguridad de la **Ley N° 29733**, "
+                            f"se identificaron los siguientes usuarios en el sistema:\n\n"
+                            f"| ID | Nombre Completo | Correo Institucional | Rol | Dependencia |\n"
+                            f"| :--- | :--- | :--- | :--- | :--- |\n"
+                            f"{filas}\n\n"
+                            f"*¿Deseas enviar una convocatoria de capacitación o verificar el estado de algún usuario en particular?*"
+                        )
+                elif "porcentaje_cumplimiento" in tools_raw or "formaciones_pendientes" in tools_raw:
+                    tool_json = json.loads(tools_raw)
+                    pct = tool_json.get("porcentaje_cumplimiento", 0)
+                    pendientes = tool_json.get("formaciones_pendientes", [])
+                    vencidas = tool_json.get("formaciones_vencidas", [])
+                    nda = tool_json.get("acuerdo_confidencialidad", {})
+                    
+                    texto_estado = f"### 📊 Estado de Cumplimiento PIMS UNSA: **{pct}%**\n\n"
+                    texto_estado += f"Conforme al control **A.3.17 y A.3.18 de ISO 27701:2025**:\n\n"
+                    if nda:
+                        texto_estado += f"- **Acuerdo de Confidencialidad (NDA):** {'✅ Firmado' if nda.get('firmado') else '⏳ Pendiente de firma'}\n"
+                    if pendientes:
+                        texto_estado += f"- **Formaciones Pendientes ({len(pendientes)}):**\n"
+                        for p in pendientes:
+                            texto_estado += f"  * `{p.get('id')}` - {p.get('titulo')} (Vence: {p.get('fecha_vencimiento')})\n"
+                    if vencidas:
+                        texto_estado += f"- **Formaciones Vencidas ({len(vencidas)}):** ⚠️ Requieren regularización inmediata.\n"
+                    return texto_estado
+            except Exception:
+                pass
+
         # 1. ¿Qué acciones puedes hacer?
         if "acciones" in c_lower or "puedes hacer" in c_lower or "que haces" in c_lower or "servicios" in c_lower:
             return (
@@ -222,20 +262,39 @@ class LLMService:
                 "- Todo docente o administrativo que reciba datos personales debe asegurar que exista dicha manifestación antes de ingresar datos al sistema."
             )
 
-        # 3. ¿Qué me falta?
-        if "falta" in c_lower or "pendiente" in c_lower or "mis cursos" in c_lower:
+        # 3. ¿En qué consisten A.3.17 y A.3.18?
+        if "a.3.17" in c_lower or "a.3.18" in c_lower or ("3.17" in c_lower and "3.18" in c_lower):
             return (
-                "Según el control **A.3.17 de ISO/IEC 27701:2025** y las directrices de la **Ley N° 29733**, "
-                "he verificado tu registro en el sistema PIMS UNSA:\n\n"
-                "### 📋 Estado de Formaciones Obligatorias\n"
-                "1. **Protección de Datos Personales - Ley 29733 (f001)**: ⏳ *Pendiente* (Vence en 30 días).\n"
-                "2. **Acuerdos de Confidencialidad - NDA (f003)**: ⏳ *Pendiente de suscripción* (Control A.3.18).\n"
-                "3. **Cómo reportar una brecha de datos (f004)**: ⚠️ *Vencida* (Requiere regularización inmediata conforme al protocolo de 24h ante incidentes).\n\n"
-                "¿Deseas que proceda a **inscribirte en las sesiones pendientes** o remitir la solicitud de firma para tu acuerdo?"
+                "Los controles **A.3.17 y A.3.18** son los pilares fundamentales del estándar internacional **ISO/IEC 27701:2025** (PIMS) implementados en la UNSA:\n\n"
+                "### 📘 Control ISO/IEC 27701:2025 A.3.17 — Formación y Concienciación en Privacidad\n"
+                "- **Objetivo:** Garantizar que todo el personal con acceso a datos personales (estudiantes, docentes y administrativos) comprenda sus obligaciones éticas y legales.\n"
+                "- **Aplicación en la UNSA:** Obligatoriedad de completar las formaciones institucionales (`f001` sobre Ley 29733, `f004` sobre protocolo de reporte de brechas en 24h y `f005` sobre Derechos ARCO).\n"
+                "- **Periodicidad:** Todo nuevo ingresante debe completarlo en sus primeros 30 días, con re-evaluación y actualización anual.\n\n"
+                "### 🔐 Control ISO/IEC 27701:2025 A.3.18 — Acuerdos de Confidencialidad y Secreto Profesional (NDAs)\n"
+                "- **Objetivo:** Formalizar legalmente el deber ineludible de confidencialidad y reserva sobre la información personal y sensible.\n"
+                "- **Aplicación en la UNSA:** Suscripción digital obligatoria del Acuerdo de Confidencialidad PIMS para todo docente, administrativo y proveedor de servicios con acceso a sistemas (SGA, ERP, Moodle).\n"
+                "- **Validez y Evidencia:** Cada acuerdo firmado genera un hash criptográfico SHA-256 almacenado como evidencia inmutable para auditorías de la Autoridad Nacional (MINJUSDH).\n\n"
+                "¿Deseas verificar el estado de tu formación obligatoria o tramitar la firma de tu acuerdo NDA?"
             )
 
-        # 4. Roles y usuarios nuevos
-        if "roles" in c_lower or "nuevo" in c_lower or "cursos deberia" in c_lower or "saber" in c_lower:
+        # 4. Primeros 5 controles de ISO 27001 en la UNSA
+        if "27001" in c_lower and ("5" in c_lower or "primeros" in c_lower or "controlador" in c_lower or "controles" in c_lower):
+            return (
+                "En el marco del Sistema Integrado de Seguridad y Privacidad de la **UNSA**, los primeros controles del Anexo A de **ISO/IEC 27001 / ISO 27002** se implementan de la siguiente manera:\n\n"
+                "1. **Control A.5.1 — Políticas para la Seguridad de la Información:**\n"
+                "   - La UNSA formaliza directivas aprobadas por Consejo Universitario (Estatuto y Directiva 001-2025) que definen el marco obligatorio de protección para todas las facultades.\n\n"
+                "2. **Control A.5.2 — Roles y Responsabilidades de Seguridad:**\n"
+                "   - Definición del rol del Oficial de Seguridad de la Información (CISO) y el Oficial de Protección de Datos (DPO) en el ROF/MOF universitario.\n\n"
+                "3. **Control A.5.3 — Segregación de Funciones:**\n"
+                "   - Separación estricta entre administradores de bases de datos, desarrolladores y operadores de mesa de partes para evitar accesos indebidos a datos sensibles.\n\n"
+                "4. **Control A.5.4 — Responsabilidades de la Dirección:**\n"
+                "   - Compromiso de decanos, directores de departamento y jefaturas de exigir el cumplimiento de la normativa de privacidad a su personal a cargo.\n\n"
+                "5. **Control A.5.5 — Contacto con Autoridades:**\n"
+                "   - Protocolo institucional de enlace formal con la **Autoridad Nacional de Protección de Datos Personales (MINJUSDH)** y el **CSIRT Nacional** ante cualquier incidente de seguridad."
+            )
+
+        # 5. Roles y usuarios nuevos
+        if "roles" in c_lower or "cursos deberia" in c_lower or "saber" in c_lower:
             return (
                 "Para todo **usuario nuevo** que ingresa a la UNSA (docente, administrativo o directivo), "
                 "la normativa institucional y el marco legal peruano establecen roles y capacitaciones específicas:\n\n"
@@ -251,16 +310,6 @@ class LLMService:
                 "4. **`f004` - Cómo reportar una brecha de datos** (Control A.3.11, protocolo de notificación en menos de 24 horas).\n"
                 "5. **`f005` - Gestión de Derechos ARCO** (Control A.3.17, para personal de atención y mesa de partes).\n\n"
                 "Todos los usuarios nuevos deben completar al menos **f001, f003 y f004** dentro de sus primeros 30 días calendario."
-            )
-
-        # 5. Si hay fragmentos RAG en el contexto, sintetizarlos
-        if "Evidencias y Normativas Recuperadas (RAG):" in context_text:
-            rag_snippet = context_text.split("Evidencias y Normativas Recuperadas (RAG):")[-1].split("Resultados de Herramientas")[0].strip()
-            return (
-                f"En cumplimiento de los controles **A.3.17 y A.3.18 de ISO/IEC 27701:2025** y la **Ley N° 29733**, "
-                f"se ha consultado la base de conocimiento institucional de la UNSA:\n\n"
-                f"{rag_snippet}\n\n"
-                f"¿Deseas profundizar sobre algún aspecto específico de esta normativa o gestionar una formación asociada?"
             )
 
         return (

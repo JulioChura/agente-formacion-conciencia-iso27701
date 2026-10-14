@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 # GITIGNORE - AGENTE FORMACIÓN UNSA (PIMS ISO 27701)
 # ============================================================
 
@@ -59,6 +59,7 @@ chroma_db/
 evidencias/
 *.pdf
 !knowledge_base/**/*.pdf
+!docs/**/*.pdf
 
 # ----------------------------------------
 # Variables de entorno (CRÍTICO - contiene API keys)
@@ -144,6 +145,15 @@ contexto_proyecto.txt
 *.bak
 *.old
 *.tmp
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
 
 # ----------------------------------------
 # Documentos pesados (opcional)
